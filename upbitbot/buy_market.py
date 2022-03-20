@@ -81,7 +81,7 @@ def sellcoin_market(target_item):
                 query = {
                         'market': target_item,
                         'side': 'ask',
-                        'ord_type': 'market',
+                        'ord_type': 'marketb',
                         'volume': current_balance,
                 }
 
