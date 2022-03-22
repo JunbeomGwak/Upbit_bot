@@ -12,25 +12,29 @@ from get_coin_info import *
 from sch import *
 
 
-sched = BackgroundScheduler(timezone='Asia/Seoul')
-sched.start()
+#sched = BackgroundScheduler(timezone='Asia/Seoul')
+#sched.start()
 
 def runner():
-    change_rate = dict()
-    acc_trade_volume = dict()
-    change_rate, acc_trade_volume = get_trade_volume()
-    print('Trade_volume')
-    print(change_rate)
-    print('\nChange rate')
-    print(acc_trade_volume)
+    print(f'\n\nStart time: {datetime.now()}')
+    rate, trade = get_trade_volume(100000)
+    print('Top 5 change rate')
+    for i in range(0, 5):
+        print(f" {rate[i]}", end="")
 
-if __name__ == '__main__':
+    print("\n\nTop 5 trade_volume")
+    for i in range(0, 5):
+        print(f" {trade[i]}", end="")
     
+    print(f'\nEnd time: {datetime.now()}')
+if __name__ == '__main__':
+    runner()
+    '''
     scheduler = BackgroundScheduler(timezone='Asia/Seoul')
-    scheduler.add_job(runner, 'cron', minute=6)
+    #scheduler.add_job(runner, 'cron', minute=6)
     scheduler.start()
     print('Press Ctrl+{0} to exit'.format('Break' if os.name == 'nt' else 'C'))
-
+    '''
     try:
         # This is here to simulate application activity (which keeps the main thread alive).
         while True:
