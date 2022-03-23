@@ -1,10 +1,12 @@
-from asyncore import loop
 import pyupbit
 import time
 import requests
 import json
 import operator
+import math
 
+from import_module import *
+from asyncore import loop
 # get_all_ticker not include "KRW"
 def get_all_ticker():
     max_count = -1
@@ -26,7 +28,7 @@ def get_all_ticker():
 def get_filtered_ticker(value):
     ticker_price = []
     ticker_name = []
-    name = get_all_ticker() # all list
+    name = get_all_ticker()
     max_count = 0
     try:
         while True:
@@ -42,14 +44,14 @@ def get_filtered_ticker(value):
     except Exception:
         raise
     
-    return ticker_name#, ticker_price
+    return ticker_name, ticker_price
 
 # Get top 10% trading volume
 def get_trade_volume(value):
     acc_trade_result = dict()
     change_rate = dict()
     
-    ticker_name = get_filtered_ticker(value) # return dictionary
+    ticker_name, ticker_price = get_filtered_ticker(value) # return dictionary
     
     max_count = 0
     loop_count = 0
@@ -65,7 +67,7 @@ def get_trade_volume(value):
             
             if trade_value[0]['change'] == 'RISE':
                 acc_trade_result[ticker_name[max_count]] = round(trade_value[0]['acc_trade_volume_24h'], 8)
-                change_rate[ticker_name[max_count]] = round(trade_value[0]['signed_change_rate'], 3)
+                change_rate[ticker_name[max_count]] = round(trade_value[0]['signed_change_rate'], 3)*100
             
             loop_count = loop_count + 1
             max_count = max_count + 1
@@ -79,9 +81,33 @@ def get_trade_volume(value):
 
     return change_rate, acc_trade_result
 
-'''
-test, result = get_trade_volume()
-print(test)
-print("\n\n")
-print(result)
-'''
+def get_my_balance():
+    payload = {
+        'access_key': access_key,
+        'nonce': str(uuid.uuid4()),
+    }
+
+    jwt_token = jwt.encode(payload, secret_key)
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/accounts", headers=headers)
+
+    #balance = res.json()
+    balance = int(float(res.json()[0]['balance']))
+    return balance
+
+def get_my_coin_balance():
+    payload = {
+        'access_key': access_key,
+        'nonce': str(uuid.uuid4()),
+    }
+
+    jwt_token = jwt.encode(payload, secret_key)
+    authorize_token = 'Bearer {}'.format(jwt_token)
+    headers = {"Authorization": authorize_token}
+
+    res = requests.get(server_url + "/v1/accounts", headers=headers)
+
+    balance = res.json()#json.loads(res.json())
+    return balance

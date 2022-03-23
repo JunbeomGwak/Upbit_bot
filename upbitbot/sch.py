@@ -2,7 +2,7 @@ from webbrowser import BackgroundBrowser
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-from buy_market import *
+from buy_sell_market_price import *
 from get_coin_info import *
 import time
 import os
