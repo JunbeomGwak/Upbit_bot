@@ -1,40 +1,65 @@
-'''
-import os
-import jwt
-import uuid
-import hashlib
-from urllib.parse import urlencode
-from import_module import * 
-import requests
-query = {
-    'market': 'KRW-ETH',
-}
-query_string = urlencode(query).encode()
+import sys
+import logging
+import traceback
+import time
+import math
+import datetime
+from unicodedata import decimal
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.background import BlockingScheduler
+from apscheduler.jobstores.base import JobLookupError
+from import_module import *
+from buy_sell_market_price import *
+from get_coin_info import *
+from sch import *
 
-m = hashlib.sha512()
-m.update(query_string)
-query_hash = m.hexdigest()
+rate = dict()
+trade = dict()
+def get_trade_volume(value):
+    acc_trade_result = dict()
+    change_rate = dict()
+    
+    ticker_name, ticker_price = get_filtered_ticker(value) # return dictionary
+    
+    url = "https://api.upbit.com/v1/ticker?markets=" + ticker_name[max_count]
+    headers = {"Accept": "application/json"}
+    response = requests.request("GET", url, headers=headers).json()    
+    trade_value = json.loads(json.dumps(response, indent=4))
+    
+    max_count = 0
+    loop_count = 0
+    try:
+        while True:
+            time.sleep(0.2)
+            
+            if trade_value[0]['change'] == 'RISE':
+                acc_trade_result[ticker_name[max_count]] = round(trade_value[0]['acc_trade_volume_24h'], 8)
+                change_rate[ticker_name[max_count]] = round(trade_value[0]['signed_change_rate'], 3)*100
+            
+            loop_count = loop_count + 1
+            max_count = max_count + 1
+            if loop_count > len(ticker_name)-1:
+                break
+    except Exception:
+        raise
 
-payload = {
-    'access_key': access_key,
-    'nonce': str(uuid.uuid4()),
-    'query_hash': query_hash,
-    'query_hash_alg': 'SHA512',
-}
+    change_rate = sorted(change_rate.items(), key=operator.itemgetter(1), reverse=True)
+    acc_trade_result = sorted(acc_trade_result.items(), key=operator.itemgetter(1), reverse=True)
 
-jwt_token = jwt.encode(payload, secret_key)
-authorize_token = 'Bearer {}'.format(jwt_token)
-headers = {"Authorization": authorize_token}
+    return change_rate, acc_trade_result
 
-res = requests.get(server_url + "/v1/orders/chance", params=query, headers=headers)
+def runner():
+    global rate, trade
+    print(f'\n\nStart time: {datetime.now()}')
+    rate, trade = get_trade_volume(100000)
+    print('Top 5 change rate')
+    for i in range(0, 5):
+        print(f" {rate[i]}", end="")
 
-print(res.json())'''
-import requests
+    print("\n\nTop 5 trade_volume")
+    for i in range(0, 5):
+        print(f" {trade[i]}", end="")
+    
+    print(f'\nEnd time: {datetime.now()}')
 
-url = "https://api.upbit.com/v1/ticker?markets=KRW-ETH"
-
-headers = {"Accept": "application/json"}
-
-response = requests.request("GET", url, headers=headers)
-
-print(response.text)
+runner()
