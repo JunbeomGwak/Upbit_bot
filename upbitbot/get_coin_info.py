@@ -1,10 +1,14 @@
+from matplotlib import ticker
+from matplotlib.pyplot import get
 import pyupbit
 import time
 import requests
 import json
 import operator
-import math
+import requests
+import time
 
+from bs4 import BeautifulSoup
 from import_module import *
 from asyncore import loop
 # get_all_ticker not include "KRW"
@@ -50,19 +54,18 @@ def get_filtered_ticker(value):
 def get_trade_volume(value):
     acc_trade_result = dict()
     change_rate = dict()
-    
-    ticker_name, ticker_price = get_filtered_ticker(value) # return dictionary
-    
     max_count = 0
     loop_count = 0
+    ticker_name, ticker_price = get_filtered_ticker(value) # return dictionary
     try:
         while True:
-
+            
             url = "https://api.upbit.com/v1/ticker?markets=" + ticker_name[max_count]
             headers = {"Accept": "application/json"}
             response = requests.request("GET", url, headers=headers).json()
         
             trade_value = json.loads(json.dumps(response, indent=4))
+            
             time.sleep(0.2)
             
             if trade_value[0]['change'] == 'RISE':
@@ -81,6 +84,7 @@ def get_trade_volume(value):
 
     return change_rate, acc_trade_result
 
+# get krw balance
 def get_my_balance():
     payload = {
         'access_key': access_key,
@@ -92,8 +96,6 @@ def get_my_balance():
     headers = {"Authorization": authorize_token}
 
     res = requests.get(server_url + "/v1/accounts", headers=headers)
-
-    #balance = res.json()
     balance = int(float(res.json()[0]['balance']))
     return balance
 
@@ -109,5 +111,28 @@ def get_my_coin_balance():
 
     res = requests.get(server_url + "/v1/accounts", headers=headers)
 
-    balance = res.json()#json.loads(res.json())
+    balance = res.json()
     return balance
+
+# ref : https://www.tradingbro.co.kr/t/topic/88/2
+def toptrade():
+    url = "https://www.coingecko.com/ko/거래소/upbit"
+    resp = requests.get(url)
+
+    bs = BeautifulSoup(resp.text,'html.parser')
+    selector = "tbody > tr > td > a"
+    columns = bs.select(selector)
+
+    ticker_in_krw = [x.text.strip() for x in columns if x.text.strip()[-3:] == "KRW"]
+    ticker = list()
+    for i in range(0, len(ticker_in_krw)):
+        ticker.append(ticker_in_krw[i].split('/')[0])
+    
+    return ticker
+
+def get_trade_rate(ticker):
+    url = f"https://api.upbit.com/v1/ticker?markets=KRW-{ticker}"
+    headers = {"Accept": "application/json"}
+
+    response = requests.request("GET", url, headers=headers).json()
+    return round(response[0]['signed_change_rate'],2)
